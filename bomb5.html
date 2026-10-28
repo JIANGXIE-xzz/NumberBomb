@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>数字炸弹</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; -webkit-tap-highlight-color: transparent; }
+  html, body { overflow-x: hidden; }
+  body {
+    background: linear-gradient(135deg, #e0f2ff 0%, #f5f9fc 50%, #e8eef3 100%);
+    min-height: 100vh;
+    padding: 16px;
+    color: #333;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(120,160,200,0.18);
+    padding: 24px 28px;
+  }
+  h1 {
+    text-align: center;
+    color: #4a90c2;
+    margin-bottom: 18px;
+    letter-spacing: 2px;
+    font-size: 24px;
+  }
+  h2 {
+    color: #4a90c2;
+    margin-bottom: 12px;
+    font-size: 17px;
+  }
+  .section {
+    background: #f7fbfd;
+    border: 1px solid #dce8f0;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  label { display: block; margin: 10px 0 6px; color: #5a7a95; font-size: 14px; }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #c8d8e4;
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 16px;
+    outline: none;
+    transition: border 0.2s;
+    min-height: 44px;
+  }
+  input[type="text"]:focus, input[type="number"]:focus { border-color: #4a90c2; }
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    background: #ffffff;
+    border: 1px solid #c8d8e4;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    user-select: none;
+    min-height: 36px;
+  }
+  .chip:hover { background: #eaf4fb; }
+  .chip input { margin-right: 6px; transform: scale(1.1); }
+  .chip.active { background: #4a90c2; color: #fff; border-color: #4a90c2; }
+
+  button {
+    padding: 12px 22px;
+    background: #4a90c2;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin: 4px;
+    min-height: 44px;
+  }
+  button:hover { background: #3a7aa8; }
+  button:active { background: #2e6a95; }
+  button.secondary { background: #b8c8d4; }
+  button.secondary:hover { background: #9cb0bf; }
+  button.danger { background: #d4728c; }
+  button.danger:hover { background: #b85c75; }
+  .hidden { display: none !important; }
+
+  /* 状态栏 - 桌面端横排 */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f7fbfd;
+    border: 1px solid #dce8f0;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+  .current-player { font-size: 16px; color: #333; flex: 1; min-width: 0; }
+  .current-player b { color: #4a90c2; font-size: 18px; word-break: break-all; }
+  .timer {
+    font-size: 28px;
+    font-weight: bold;
+    min-width: 130px;
+    text-align: center;
+    font-family: "Consolas", monospace;
+    white-space: nowrap;
+  }
+  .timer.green { color: #2eaa5a; }
+  .timer.red { color: #d4524a; }
+
+  .range-display {
+    text-align: center;
+    font-size: 26px;
+    color: #4a90c2;
+    font-weight: bold;
+    padding: 16px;
+    background: #f7fbfd;
+    border: 1px solid #dce8f0;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    letter-spacing: 3px;
+  }
+  .guess-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .guess-row input { flex: 1; }
+  .guess-row button { flex-shrink: 0; }
+  .hint {
+    text-align: center;
+    padding: 12px;
+    background: #fff8e1;
+    border: 1px solid #f0e0a0;
+    border-radius: 8px;
+    color: #8a6a20;
+    margin-bottom: 14px;
+    min-height: 44px;
+    font-size: 16px;
+    word-break: break-all;
+  }
+  .cumulative {
+    background: #eef5fa;
+    border: 1px solid #c8d8e4;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-around;
+    font-size: 14px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .cumulative span { flex: 1; min-width: 140px; text-align: center; }
+  .cumulative span b { color: #d4524a; font-size: 17px; }
+
+  .modal-mask {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(60,80,100,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99;
+    padding: 16px;
+    overflow-y: auto;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 26px;
+    max-width: 460px;
+    width: 100%;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+    margin: auto;
+  }
+  .modal h2 { text-align: center; margin-bottom: 12px; font-size: 20px; }
+  .bomb-msg {
+    text-align: center;
+    color: #d4524a;
+    font-size: 15px;
+    margin-bottom: 14px;
+    font-weight: bold;
+    line-height: 1.6;
+  }
+  .punish-info {
+    background: #f7fbfd;
+    border: 1px solid #dce8f0;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    line-height: 1.9;
+    font-size: 15px;
+  }
+  .punish-info div b { color: #4a90c2; word-break: break-all; }
+  .modal-buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+  .modal-buttons button { flex: 1; min-width: 110px; }
+  .btn-row { text-align: center; margin-top: 10px; }
+
+  /* 移动端适配 */
+  @media (max-width: 600px) {
+    body { padding: 10px; font-size: 14px; }
+    .container { padding: 18px 16px; border-radius: 14px; }
+    h1 { font-size: 20px; margin-bottom: 14px; }
+    h2 { font-size: 16px; }
+    .section { padding: 14px; margin-bottom: 12px; }
+    .chip { padding: 7px 12px; font-size: 13px; }
+
+    /* 状态栏改为上下布局 */
+    .status-bar {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 12px 14px;
+      gap: 8px;
+    }
+    .current-player { text-align: center; font-size: 15px; }
+    .current-player b { font-size: 17px; }
+    .timer {
+      font-size: 32px;
+      min-width: auto;
+      width: 100%;
+      padding: 4px 0;
+    }
+
+    .range-display { font-size: 22px; padding: 14px; letter-spacing: 2px; }
+    .hint { font-size: 15px; padding: 10px; }
+
+    .guess-row { flex-direction: column; gap: 8px; }
+    .guess-row button { width: 100%; }
+
+    .cumulative { flex-direction: column; gap: 6px; padding: 10px; }
+    .cumulative span { min-width: auto; }
+
+    .modal { padding: 20px 18px; border-radius: 12px; }
+    .modal h2 { font-size: 18px; }
+    .bomb-msg { font-size: 14px; }
+    .punish-info { padding: 12px 14px; font-size: 14px; line-height: 1.8; }
+    .modal-buttons { flex-direction: column; }
+    .modal-buttons button { width: 100%; min-width: auto; }
+
+    .btn-row button { width: 100%; }
+  }
+
+  @media (max-width: 360px) {
+    h1 { font-size: 18px; }
+    .timer { font-size: 28px; }
+    .range-display { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎯 数字炸弹</h1>
+
+  <div id="setupScreen">
+    <div class="section">
+      <h2>玩家信息</h2>
+      <label>玩家 1 姓名</label>
+      <input type="text" id="p1Name" placeholder="请输入玩家1姓名">
+      <label>玩家 2 姓名</label>
+      <input type="text" id="p2Name" placeholder="请输入玩家2姓名">
+    </div>
+
+    <div class="section">
+      <h2>可接受的惩罚工具（默认全选，可调整）</h2>
+      <div class="checkbox-group" id="toolGroup"></div>
+    </div>
+
+    <div class="section">
+      <h2>可接受的惩罚姿势（默认全选，可调整）</h2>
+      <div class="checkbox-group" id="postureGroup"></div>
+    </div>
+
+    <div class="btn-row">
+      <button onclick="startGame()" style="width:100%;">开始游戏</button>
+    </div>
+  </div>
+
+  <div id="gameScreen" class="hidden">
+    <div class="status-bar">
+      <div class="current-player">当前操作：<b id="currentPlayerName">-</b></div>
+      <div class="timer green" id="timer">10</div>
+    </div>
+
+    <div class="range-display" id="rangeDisplay">1 ~ 100</div>
+
+    <div class="guess-row">
+      <input type="number" id="guessInput" placeholder="输入 1~100 之间的数字" min="1" max="100" inputmode="numeric">
+      <button onclick="submitGuess()">猜！</button>
+    </div>
+
+    <div class="hint" id="hint">请输入一个数字</div>
+
+    <div class="cumulative">
+      <span>累计惩罚 · <b id="p1NameStat">-</b>：<b id="p1Total">0</b></span>
+      <span>累计惩罚 · <b id="p2NameStat">-</b>：<b id="p2Total">0</b></span>
+    </div>
+
+    <div class="btn-row">
+      <button class="secondary" onclick="openModifyModal()" style="width:100%;">修改工具 / 姿势</button>
+    </div>
+  </div>
+</div>
+
+<!-- 超时惩罚弹窗 -->
+<div class="modal-mask hidden" id="punishModal">
+  <div class="modal">
+    <h2>执行惩罚</h2>
+    <div class="punish-info">
+      <div>被惩罚者：<b id="punishTarget">-</b></div>
+      <div>执行者：<b id="punishExecutor">-</b></div>
+      <div>惩罚数目：<b id="punishCount">-</b></div>
+      <div>工具：<b id="punishTool">-</b></div>
+      <div>姿势：<b id="punishPosture">-</b></div>
+    </div>
+    <div class="modal-buttons">
+      <button onclick="executePunish()">已执行</button>
+    </div>
+  </div>
+</div>
+
+<!-- 踩炸弹惩罚弹窗（两阶段） -->
+<div class="modal-mask hidden" id="gameOverModal">
+  <div class="modal">
+    <h2>💣 踩到炸弹！</h2>
+    <div class="bomb-msg" id="bombMsg">嘿嘿，踩到炸弹咯，接受惩罚吧~</div>
+    <div class="punish-info" id="bombPunishInfo">
+      <div>被惩罚者：<b id="goTarget">-</b></div>
+      <div>执行者：<b id="goExecutor">-</b></div>
+      <div>惩罚数目：<b id="goCount">-</b></div>
+      <div>工具：<b id="goTool">-</b></div>
+      <div>姿势：<b id="goPosture">-</b></div>
+    </div>
+    <div class="modal-buttons" id="bombPhase1">
+      <button onclick="executeBombPunish()">已执行</button>
+    </div>
+    <div class="modal-buttons hidden" id="bombPhase2">
+      <button onclick="restartGame()">重新开始</button>
+      <button class="danger" onclick="resetAll()">重置数据</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修改工具/姿势弹窗 -->
+<div class="modal-mask hidden" id="modifyModal">
+  <div class="modal">
+    <h2>修改工具 / 姿势</h2>
+    <label>可接受的惩罚工具</label>
+    <div class="checkbox-group" id="toolGroup2"></div>
+    <label style="margin-top:14px;">可接受的惩罚姿势</label>
+    <div class="checkbox-group" id="postureGroup2"></div>
+    <div class="modal-buttons" style="margin-top:18px;">
+      <button onclick="saveModify()">保存</button>
+      <button class="secondary" onclick="closeModifyModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const TOOLS = ["木板","戒尺","藤条","热熔胶棒","小红","小绿","小黑","亚克力板"];
+  const POSTURES = ["otk","平趴","跪撅","尿布式"];
+
+  let state = {
+    p1: "", p2: "",
+    tools: new Set(),
+    postures: new Set(),
+    bomb: 0,
+    min: 1, max: 100,
+    turn: 1,
+    timerVal: 10,
+    timerDir: 1,
+    overtimeSeconds: 0,
+    timerId: null,
+    p1Total: 0, p2Total: 0,
+    pendingPunish: null,
+    gameActive: false
+  };
+
+  function buildChips(containerId, items, set) {
+    const c = document.getElementById(containerId);
+    c.innerHTML = "";
+    items.forEach(it => {
+      const chip = document.createElement("label");
+      chip.className = "chip" + (set.has(it) ? " active" : "");
+      chip.innerHTML = `<input type="checkbox" ${set.has(it)?'checked':''}> ${it}`;
+      chip.querySelector("input").addEventListener("change", e => {
+        if (e.target.checked) set.add(it); else set.delete(it);
+        chip.classList.toggle("active", e.target.checked);
+      });
+      c.appendChild(chip);
+    });
+  }
+
+  TOOLS.forEach(t => state.tools.add(t));
+  POSTURES.forEach(p => state.postures.add(p));
+  buildChips("toolGroup", TOOLS, state.tools);
+  buildChips("postureGroup", POSTURES, state.postures);
+
+  function startGame() {
+    const n1 = document.getElementById("p1Name").value.trim();
+    const n2 = document.getElementById("p2Name").value.trim();
+    if (!n1 || !n2) { alert("请输入两位玩家的姓名"); return; }
+    if (state.tools.size === 0) { alert("请至少选择一种工具"); return; }
+    if (state.postures.size === 0) { alert("请至少选择一种姿势"); return; }
+    state.p1 = n1; state.p2 = n2;
+    state.p1Total = 0; state.p2Total = 0;
+    initRound();
+    document.getElementById("setupScreen").classList.add("hidden");
+    document.getElementById("gameScreen").classList.remove("hidden");
+    updateStats();
+  }
+
+  function initRound() {
+    state.bomb = Math.floor(Math.random() * 100) + 1;
+    state.min = 1; state.max = 100;
+    state.turn = 1;
+    state.gameActive = true;
+    document.getElementById("hint").textContent = "请输入一个数字";
+    document.getElementById("guessInput").value = "";
+    updateUI();
+    startTimer();
+  }
+
+  function updateUI() {
+    const name = state.turn === 1 ? state.p1 : state.p2;
+    document.getElementById("currentPlayerName").textContent = name;
+    document.getElementById("rangeDisplay").textContent = `${state.min} ~ ${state.max}`;
+  }
+
+  function updateStats() {
+    document.getElementById("p1NameStat").textContent = state.p1;
+    document.getElementById("p2NameStat").textContent = state.p2;
+    document.getElementById("p1Total").textContent = state.p1Total;
+    document.getElementById("p2Total").textContent = state.p2Total;
+  }
+
+  function startTimer() {
+    clearInterval(state.timerId);
+    state.timerVal = 10;
+    state.timerDir = 1;
+    state.overtimeSeconds = 0;
+    renderTimer();
+    state.timerId = setInterval(() => {
+      if (state.timerDir === 1) {
+        state.timerVal--;
+        if (state.timerVal < 0) {
+          state.timerVal = 0;
+          state.timerDir = -1;
+          state.overtimeSeconds = 1;
+        }
+      } else {
+        state.overtimeSeconds++;
+      }
+      renderTimer();
+    }, 1000);
+  }
+
+  function renderTimer() {
+    const t = document.getElementById("timer");
+    if (state.timerDir === 1) {
+      t.textContent = state.timerVal;
+      t.className = "timer green";
+    } else {
+      t.textContent = `超时${state.overtimeSeconds}s`;
+      t.className = "timer red";
+    }
+  }
+
+  function submitGuess() {
+    if (!state.gameActive) return;
+    const v = parseInt(document.getElementById("guessInput").value);
+    if (isNaN(v) || v < 1 || v > 100) {
+      document.getElementById("hint").textContent = "请输入 1~100 之间的整数";
+      return;
+    }
+    if (v <= state.min || v >= state.max) {
+      document.getElementById("hint").textContent = `数字必须在 ${state.min+1} ~ ${state.max-1} 之间`;
+      return;
+    }
+    clearInterval(state.timerId);
+    const overtime = state.overtimeSeconds;
+    const target = state.turn === 1 ? state.p1 : state.p2;
+    const executor = state.turn === 1 ? state.p2 : state.p1;
+
+    if (v === state.bomb) {
+      state.gameActive = false;
+      const count = state.bomb * 2;
+      document.getElementById("hint").textContent = `💥 踩到炸弹 ${state.bomb}！惩罚 ${count} 下`;
+      showBombPunish(target, executor, count);
+      return;
+    }
+
+    if (v < state.bomb) {
+      state.min = v;
+      document.getElementById("hint").textContent = "小了";
+    } else {
+      state.max = v;
+      document.getElementById("hint").textContent = "大了";
+    }
+    document.getElementById("guessInput").value = "";
+
+    if (overtime > 0) {
+      const count = overtime * 3;
+      showTimeoutPunish(target, executor, count);
+    } else {
+      state.turn = state.turn === 1 ? 2 : 1;
+      updateUI();
+      startTimer();
+    }
+  }
+
+  function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function showTimeoutPunish(target, executor, count) {
+    const tool = pickRandom([...state.tools]);
+    const posture = pickRandom([...state.postures]);
+    state.pendingPunish = { target, executor, count, tool, posture, type: "timeout" };
+
+    document.getElementById("punishTarget").textContent = target;
+    document.getElementById("punishExecutor").textContent = executor;
+    document.getElementById("punishCount").textContent = count;
+    document.getElementById("punishTool").textContent = tool;
+    document.getElementById("punishPosture").textContent = posture;
+    document.getElementById("punishModal").classList.remove("hidden");
+  }
+
+  function showBombPunish(target, executor, count) {
+    const tool = pickRandom([...state.tools]);
+    const posture = pickRandom([...state.postures]);
+    state.pendingPunish = { target, executor, count, tool, posture, type: "bomb" };
+
+    document.getElementById("goTarget").textContent = target;
+    document.getElementById("goExecutor").textContent = executor;
+    document.getElementById("goCount").textContent = count;
+    document.getElementById("goTool").textContent = tool;
+    document.getElementById("goPosture").textContent = posture;
+
+    document.getElementById("bombMsg").classList.remove("hidden");
+    document.getElementById("bombPunishInfo").classList.remove("hidden");
+    document.getElementById("bombPhase1").classList.remove("hidden");
+    document.getElementById("bombPhase2").classList.add("hidden");
+    document.getElementById("gameOverModal").classList.remove("hidden");
+  }
+
+  function executePunish() {
+    const p = state.pendingPunish;
+    if (!p) return;
+    if (p.target === state.p1) state.p1Total += p.count;
+    else state.p2Total += p.count;
+    updateStats();
+
+    document.getElementById("punishModal").classList.add("hidden");
+    state.turn = state.turn === 1 ? 2 : 1;
+    state.gameActive = true;
+    updateUI();
+    startTimer();
+    state.pendingPunish = null;
+  }
+
+  function executeBombPunish() {
+    const p = state.pendingPunish;
+    if (!p) return;
+    if (p.target === state.p1) state.p1Total += p.count;
+    else state.p2Total += p.count;
+    updateStats();
+
+    document.getElementById("bombMsg").classList.add("hidden");
+    document.getElementById("bombPunishInfo").classList.add("hidden");
+    document.getElementById("bombPhase1").classList.add("hidden");
+    document.getElementById("bombPhase2").classList.remove("hidden");
+  }
+
+  function restartGame() {
+    resetGameOverModalPhase();
+    document.getElementById("gameOverModal").classList.add("hidden");
+    initRound();
+  }
+
+  function resetAll() {
+    resetGameOverModalPhase();
+    document.getElementById("gameOverModal").classList.add("hidden");
+    document.getElementById("gameScreen").classList.add("hidden");
+    document.getElementById("setupScreen").classList.remove("hidden");
+    clearInterval(state.timerId);
+    state.p1 = ""; state.p2 = "";
+    state.tools.clear(); state.postures.clear();
+    TOOLS.forEach(t => state.tools.add(t));
+    POSTURES.forEach(p => state.postures.add(p));
+    state.p1Total = 0; state.p2Total = 0;
+    state.pendingPunish = null;
+    state.gameActive = false;
+    document.getElementById("p1Name").value = "";
+    document.getElementById("p2Name").value = "";
+    buildChips("toolGroup", TOOLS, state.tools);
+    buildChips("postureGroup", POSTURES, state.postures);
+  }
+
+  function resetGameOverModalPhase() {
+    document.getElementById("bombMsg").classList.remove("hidden");
+    document.getElementById("bombPunishInfo").classList.remove("hidden");
+    document.getElementById("bombPhase1").classList.remove("hidden");
+    document.getElementById("bombPhase2").classList.add("hidden");
+  }
+
+  let tempTools = new Set();
+  let tempPostures = new Set();
+  function openModifyModal() {
+    tempTools = new Set(state.tools);
+    tempPostures = new Set(state.postures);
+    buildChips("toolGroup2", TOOLS, tempTools);
+    buildChips("postureGroup2", POSTURES, tempPostures);
+    document.getElementById("modifyModal").classList.remove("hidden");
+  }
+  function closeModifyModal() {
+    document.getElementById("modifyModal").classList.add("hidden");
+  }
+  function saveModify() {
+    if (tempTools.size === 0) { alert("请至少选择一种工具"); return; }
+    if (tempPostures.size === 0) { alert("请至少选择一种姿势"); return; }
+    state.tools = new Set(tempTools);
+    state.postures = new Set(tempPostures);
+    closeModifyModal();
+  }
+
+  document.getElementById("guessInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") submitGuess();
+  });
+</script>
+</body>
+</html>
